@@ -1,0 +1,380 @@
+Super/Mega/Chip-48 Assembler V2.5 by Christian Egeberg 20/8/91.
+MegaChip extensions by: Martijn Wenting 08/07/2007
+
+TargetFile: game.ch8
+SourceFile: game.chp
+ListFile: game.ch8.lst
+
+Reading: game.chp
+
+Done reading
+
+-----   *INSTRUCTIONS*   -----
+
+HIGH 
+game.chp(6).. 200: 00FF
+JP  INITIALIZE 
+game.chp(8).. 202: 1242
+DA  'Copyright (c) 00laboratories 2011-2015' 
+game.chp(9).. 204: 436F70797269676874202863292030306C61626F7261746F7269657320323031312D32303135
+ LD V0, #AE    ; Address Space #E00 
+game.chp(27).. 22A: 60AE
+ LD I, OBJ_GET_INJECT ; Select Injection Point. 
+game.chp(29).. 22C: A236
+ LD [I], V1    ; Inject 2 Bytes (V0 & V1). 
+game.chp(30).. 22E: F155
+ LD I, OBJ_SET_INJECT ; Select Injection Point. 
+game.chp(32).. 230: A23C
+ LD [I], V1    ; Inject 2 Bytes (V0 & V1). 
+game.chp(33).. 232: F155
+RET 
+game.chp(34).. 234: 00EE
+ DB #00 
+game.chp(39).. 236: 00
+ DB #00 
+game.chp(40).. 237: 00
+ LD V9, [I] ; Load object data into registers V0 - V9. 
+game.chp(42).. 238: F965
+RET 
+game.chp(43).. 23A: 00EE
+ DB #00 
+game.chp(48).. 23C: 00
+ DB #00 
+game.chp(49).. 23D: 00
+ LD [I], V9 ; Save registers V0 - V9 into object data. 
+game.chp(51).. 23E: F955
+RET 
+game.chp(52).. 240: 00EE
+ CALL DRAW_CHAR 
+game.chp(56).. 242: 22BE
+ LD VB, 00     ; iterator VB 
+game.chp(59).. 244: 6B00
+  LD V1, VB    ; argument V1 for OBJ_SELECT. 
+game.chp(61).. 246: 81B0
+  CALL OBJ_SELECT   ; select object at #EVB 
+game.chp(62).. 248: 222A
+  CALL OBJ_GET   ; load object data into registers. 
+game.chp(63).. 24A: 2236
+   CALL OBJ_INIT  ; initialize object (default values). 
+game.chp(64).. 24C: 2270
+  CALL OBJ_SET   ; save registers into object data. 
+game.chp(65).. 24E: 223C
+  ADD VB, 10 ; next object 
+game.chp(66).. 250: 7B0A
+  SNE VB, 80 ; objects total reached? 
+game.chp(67).. 252: 4B50
+   JP MAIN ; break iteration 
+game.chp(68).. 254: 1258
+   JP LOOP_25011826 
+game.chp(69).. 256: 1246
+ LD VC, 00     ; iterator VC 
+game.chp(72).. 258: 6C00
+  LD V1, VC    ; argument V1 for OBJ_SELECT. 
+game.chp(74).. 25A: 81C0
+  CALL OBJ_SELECT   ; select object at #EVC 
+game.chp(75).. 25C: 222A
+  CALL OBJ_GET   ; load object data into registers. 
+game.chp(76).. 25E: 2236
+   CALL OBJ_UPDATE  ; update object. 
+game.chp(77).. 260: 2278
+   CALL OBJ_DRAW  ; render object. 
+game.chp(78).. 262: 22A0
+  CALL OBJ_SET   ; save registers into object data. 
+game.chp(79).. 264: 223C
+  ADD VC, 10 ; next object 
+game.chp(80).. 266: 7C0A
+  SNE VC, 80 ; objects total reached? 
+game.chp(81).. 268: 4C50
+   JP MAIN ; break iteration 
+game.chp(82).. 26A: 1258
+   JP LOOP_25011836 
+game.chp(83).. 26C: 125A
+JP MAIN 
+game.chp(84).. 26E: 1258
+ LD V0, 16 ; initial X coordinate. 
+game.chp(87).. 270: 6010
+ ADD V0, VB ; add iterator to put some distance between X. 
+game.chp(88).. 272: 80B4
+ LD V1, 32 ; initial Y coordinate. 
+game.chp(89).. 274: 6120
+RET 
+game.chp(90).. 276: 00EE
+ LD VA, 1 ; SUBTRACT TO 1 
+game.chp(93).. 278: 6A01
+ RND V8, $00000001 ; Generate number between 0 and 1. 
+game.chp(96).. 27A: C801
+ SNE V8, 0   ; Does the number equal 0? 
+game.chp(97).. 27C: 4800
+  ADD V0, 01  ; Add 1 to X coordinate. 
+game.chp(98).. 27E: 7001
+ SNE V8, 1   ; Does the number equal 1? 
+game.chp(99).. 280: 4801
+  SUB V0, VA  ; Subtract 1 from Y coordinate. 
+game.chp(100).. 282: 80A5
+ RND V8, $00000001 ; Generate number between 0 and 1. 
+game.chp(103).. 284: C801
+ SNE V8, 0   ; Does the number equal 0? 
+game.chp(104).. 286: 4800
+  ADD V1, 01  ; Add 1 to Y coordinate. 
+game.chp(105).. 288: 7101
+ SNE V8, 1   ; Does the number equal 1? 
+game.chp(106).. 28A: 4801
+  SUB V1, VA  ; Subtract 1 from Y coordinate. 
+game.chp(107).. 28C: 81A5
+ SNE V0, 255  ; x < 0 
+game.chp(110).. 28E: 40FF
+ LD V0, 0  ; x = 0 
+game.chp(111).. 290: 6000
+ SNE V0, 128  ; x > 127 
+game.chp(112).. 292: 4080
+ LD V0, 127  ; x = 127 
+game.chp(113).. 294: 607F
+ SNE V1, 255  ; y < 0 
+game.chp(116).. 296: 41FF
+ LD V1, 0  ; < = 0 
+game.chp(117).. 298: 6100
+ SNE V1, 64  ; y > 63 
+game.chp(118).. 29A: 4140
+ LD V1, 63  ; < = 63 
+game.chp(119).. 29C: 613F
+RET 
+game.chp(120).. 29E: 00EE
+ LD I, d_pixel ; select pixel sprite. 
+game.chp(123).. 2A0: A2FA
+ LD VB, 08     ; Iterator VB beginning at 8. 
+game.chp(126).. 2A2: 6B08
+ LD VF, 00     ; Result: False. 
+game.chp(127).. 2A4: 6F00
+  SNE V1, VB    ; Does the Y coordinate equal VB iterator? 
+game.chp(129).. 2A6: 91B0
+   LD VF, 01   ; Result: True. 
+game.chp(130).. 2A8: 6F01
+  ADD VB, 01 ; next iteration 
+game.chp(131).. 2AA: 7B01
+  SE VB, 22 ; break at 22 
+game.chp(132).. 2AC: 3B16
+   JP LOOP_25011614 
+game.chp(133).. 2AE: 12A6
+ SE VF, 01     ; Result: true, can set pixel: 
+game.chp(135).. 2B0: 3F01
+  CALL SET_PIXEL 
+game.chp(136).. 2B2: 22B6
+RET 
+game.chp(137).. 2B4: 00EE
+ DRW V0, V1, 1 ; Initial draw. 
+game.chp(142).. 2B6: D011
+ SE VF, #00  ; Pixel had collision 
+game.chp(143).. 2B8: 3F00
+ DRW V0, V1, 1 ; Redraw Pixel 
+game.chp(144).. 2BA: D011
+RET 
+game.chp(145).. 2BC: 00EE
+ LD V1, #0A   ; Y Position for all characters. 
+game.chp(148).. 2BE: 610A
+ LD V0, #00  ; Set to 0 for next command. 
+game.chp(150).. 2C0: 6000
+ LD HF, V0  ; Load sprite "0" into I. 
+game.chp(151).. 2C2: F030
+ LD V0, #0A  ; Move on X coordinate. 
+game.chp(153).. 2C4: 600A
+ DRW V0, V1, 10 ; Draw sprite. 
+game.chp(154).. 2C6: D01A
+ LD V0, #14  ; Move on X coordinate. 
+game.chp(156).. 2C8: 6014
+ DRW V0, V1, 10 ; Draw sprite. 
+game.chp(157).. 2CA: D01A
+ LD I, d_char_s ; Set I to address of "S". 
+game.chp(159).. 2CC: A2FB
+ LD V0, #1E  ; Move on X coordinate. 
+game.chp(160).. 2CE: 601E
+ DRW V0, V1, 10 ; Draw sprite. 
+game.chp(161).. 2D0: D01A
+ LD V0, #C  ; Set to C for next command. 
+game.chp(163).. 2D2: 600C
+ LD HF, V0  ; Load sprite "C" into I. 
+game.chp(164).. 2D4: F030
+ LD V0, #28  ; Move on X coordinate. 
+game.chp(165).. 2D6: 6028
+ DRW V0, V1, 10 ; Draw sprite. 
+game.chp(166).. 2D8: D01A
+ LD I, d_char_h ; Set I to address of "H". 
+game.chp(168).. 2DA: A305
+ LD V0, #32  ; Move on X coordinate. 
+game.chp(169).. 2DC: 6032
+ DRW V0, V1, 10 ; Draw sprite. 
+game.chp(170).. 2DE: D01A
+ LD I, d_char_i ; Set I to address of "I". 
+game.chp(172).. 2E0: A30F
+ LD V0, #39  ; Move on X coordinate. 
+game.chp(173).. 2E2: 6039
+ DRW V0, V1, 10 ; Draw sprite. 
+game.chp(174).. 2E4: D01A
+ LD I, d_char_p ; Set I to address of "P". 
+game.chp(176).. 2E6: A319
+ LD V0, #40  ; Move on X coordinate. 
+game.chp(177).. 2E8: 6040
+ DRW V0, V1, 10 ; Draw sprite. 
+game.chp(178).. 2EA: D01A
+ LD V0, #8  ; Set to 8 for next command. 
+game.chp(180).. 2EC: 6008
+ LD HF, V0  ; Load sprite "8" into I. 
+game.chp(181).. 2EE: F030
+ LD V0, #4A  ; Move on X coordinate. 
+game.chp(182).. 2F0: 604A
+ DRW V0, V1, 10 ; Draw sprite. 
+game.chp(183).. 2F2: D01A
+RET 
+game.chp(184).. 2F4: 00EE
+JP ENDGAME 
+game.chp(188).. 2F6: 12F6
+EXIT 
+game.chp(189).. 2F8: 00FD
+ DB $1....... 
+game.chp(192).. 2FA: 80
+ DB $.1111111 
+game.chp(194).. 2FB: 7F
+ DB $1111111. 
+game.chp(195).. 2FC: FE
+ DB $11...... 
+game.chp(196).. 2FD: C0
+ DB $111..... 
+game.chp(197).. 2FE: E0
+ DB $11111... 
+game.chp(198).. 2FF: F8
+ DB $...1111. 
+game.chp(199).. 300: 1E
+ DB $.....111 
+game.chp(200).. 301: 07
+ DB $......11 
+game.chp(201).. 302: 03
+ DB $.1111111 
+game.chp(202).. 303: 7F
+ DB $1111111. 
+game.chp(203).. 304: FE
+ DB $1......1 
+game.chp(205).. 305: 81
+ DB $11....11 
+game.chp(206).. 306: C3
+ DB $11....11 
+game.chp(207).. 307: C3
+ DB $11....11 
+game.chp(208).. 308: C3
+ DB $11111111 
+game.chp(209).. 309: FF
+ DB $11111111 
+game.chp(210).. 30A: FF
+ DB $11....11 
+game.chp(211).. 30B: C3
+ DB $11....11 
+game.chp(212).. 30C: C3
+ DB $11....11 
+game.chp(213).. 30D: C3
+ DB $1......1 
+game.chp(214).. 30E: 81
+ DB $...11... 
+game.chp(216).. 30F: 18
+ DB $...11... 
+game.chp(217).. 310: 18
+ DB $........ 
+game.chp(218).. 311: 00
+ DB $........ 
+game.chp(219).. 312: 00
+ DB $....1... 
+game.chp(220).. 313: 08
+ DB $...11... 
+game.chp(221).. 314: 18
+ DB $...11... 
+game.chp(222).. 315: 18
+ DB $...11... 
+game.chp(223).. 316: 18
+ DB $...11... 
+game.chp(224).. 317: 18
+ DB $...1.... 
+game.chp(225).. 318: 10
+ DB $1111111. 
+game.chp(227).. 319: FE
+ DB $11...111 
+game.chp(228).. 31A: C7
+ DB $11....11 
+game.chp(229).. 31B: C3
+ DB $11...111 
+game.chp(230).. 31C: C7
+ DB $1111111. 
+game.chp(231).. 31D: FE
+ DB $11...... 
+game.chp(232).. 31E: C0
+ DB $11...... 
+game.chp(233).. 31F: C0
+ DB $11...... 
+game.chp(234).. 320: C0
+ DB $11...... 
+game.chp(235).. 321: C0
+ DB $1.......
+game.chp(236).. 322: 80
+
+-----   *SYMBOLS*   -----
+
+2BE DRAW_CHAR game.chp(147)
+  game.chp(56)
+305 D_CHAR_H game.chp(204)
+  game.chp(168)
+30F D_CHAR_I game.chp(215)
+  game.chp(172)
+319 D_CHAR_P game.chp(226)
+  game.chp(176)
+2FB D_CHAR_S game.chp(193)
+  game.chp(159)
+2FA D_PIXEL game.chp(191)
+  game.chp(123)
+2F6 ENDGAME game.chp(187)
+  game.chp(188)
+242 INITIALIZE game.chp(54)
+  game.chp(8)
+2A6 LOOP_25011614 game.chp(128)
+  game.chp(133)
+246 LOOP_25011826 game.chp(60)
+  game.chp(69)
+25A LOOP_25011836 game.chp(73)
+  game.chp(83)
+258 MAIN game.chp(71)
+  game.chp(68)
+  game.chp(82)
+  game.chp(84)
+2A0 OBJ_DRAW game.chp(122)
+  game.chp(78)
+236 OBJ_GET game.chp(36)
+  game.chp(63)
+  game.chp(76)
+236 OBJ_GET_INJECT game.chp(38)
+  game.chp(29)
+270 OBJ_INIT game.chp(86)
+  game.chp(64)
+22A OBJ_SELECT game.chp(25)
+  game.chp(62)
+  game.chp(75)
+23C OBJ_SET game.chp(45)
+  game.chp(65)
+  game.chp(79)
+23C OBJ_SET_INJECT game.chp(47)
+  game.chp(32)
+278 OBJ_UPDATE game.chp(92)
+  game.chp(77)
+2B6 SET_PIXEL game.chp(141)
+  game.chp(136)
+
+-----   *CONDITIONS*   -----
+
+UND ALIGNON
+DEF CHIP48
+UND CHIP8
+UND HPASC
+UND HPHEAD
+DEF MEGACHIP10
+DEF SCHIP10
+DEF SCHIP11
+UND USEDON
+UND USEDYES
+DEF XREFON
+DEF XREFYES
+
+Total number of warnings: 0

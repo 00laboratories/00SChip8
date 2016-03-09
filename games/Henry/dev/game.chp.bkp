@@ -1,0 +1,267 @@
+; ------------------------------------ ;
+; -- 00Laboratories Chip8 game core -- ;
+; ------------------------------------ ;
+OPTION BINARY
+ALIGN OFF
+HIGH
+
+JP		INITIALIZE
+DA		'Copyright (c) 00Laboratories 2015'
+
+; -- Memory Layout ------------------- ;
+; @E00
+; #00: Current X Position.
+; #01: Current Y Position.
+; ...
+; #09: Object ID (1=A, 2=B).
+; @EA0
+; #00: Dynamic OOP Code Generation.
+; -- Register Layout ----------------- ;
+;  VA: Subtraction Value.
+;  VB: General Purpose.
+;  VF: Carry & Collision Flag.
+; ------------------------------------ ;
+
+GEN_GET_OBJ:
+
+RET
+
+; --------------------
+GET_OBJA:
+	LD I, #E00 + 00
+	LD V9, [I]
+RET
+SET_OBJA:
+	LD I, #E00 + 00
+	LD [I], V9
+RET
+; --------------------
+GET_OBJB:
+	LD I, #E00 + 10
+	LD V9, [I]
+RET
+SET_OBJB:
+	LD I, #E00 + 10
+	LD [I], V9
+RET
+; --------------------
+GET_OBJC:
+	LD I, #E00 + 20
+	LD V9, [I]
+RET
+SET_OBJC:
+	LD I, #E00 + 20
+	LD [I], V9
+RET
+; --------------------
+GET_OBJD:
+	LD I, #E00 + 30
+	LD V9, [I]
+RET
+SET_OBJD:
+	LD I, #E00 + 30
+	LD [I], V9
+RET
+; --------------------
+INITIALIZE:
+	; Draw "00SCHIP8" on the screen.
+	CALL DRAW_CHAR
+	
+	
+	
+	; Default Values for Object A:
+	CALL GET_OBJA
+	LD V0, 16
+	LD V1, 32
+	LD V9, 1 ; Object: A
+	CALL SET_OBJA
+	
+	; Default Values for Object B:
+	CALL GET_OBJB
+	LD V0, 48
+	LD V1, 32
+	LD V9, 2 ; Object: B
+	CALL SET_OBJB
+	
+	; Default Values for Object C:
+	CALL GET_OBJC
+	LD V0, 64
+	LD V1, 32
+	LD V9, 3 ; Object: C
+	CALL SET_OBJC
+	
+	; Default Values for Object D:
+	CALL GET_OBJD
+	LD V0, 96
+	LD V1, 32
+	LD V9, 4 ; Object: D
+	CALL SET_OBJD
+	
+	MAIN:
+		CALL GET_OBJA
+		CALL OBJ_UPDATE
+		CALL OBJ_DRAW
+		CALL SET_OBJA
+		
+		CALL GET_OBJB
+		CALL OBJ_UPDATE
+		CALL OBJ_DRAW
+		CALL SET_OBJB
+		
+		CALL GET_OBJC
+		CALL OBJ_UPDATE
+		CALL OBJ_DRAW
+		CALL SET_OBJC
+		
+		CALL GET_OBJD
+		CALL OBJ_UPDATE
+		CALL OBJ_DRAW
+		CALL SET_OBJD
+	JP MAIN
+	
+	OBJ_UPDATE:
+		LD VA, 1 ; SUBTRACT TO 1
+	
+		; randomly increase or decrease V0 [X POSITION].
+		RND V8, $00000001
+		SNE V8, 0
+			ADD V0, 01 ; Add 1
+		SNE V8, 1
+			SUB V0, VA ; Subtract 1
+
+		; randomly increase or decrease V1 [Y POSITION].
+		RND V8, $00000001
+		SNE V8, 0
+			ADD V1, 01 ; Add 1
+		SNE V8, 1
+			SUB V1, VA ; Subtract 1
+			
+		; clamp value of V0 [X POSITION]
+		SNE V0, 255		; x < 0
+		LD V0, 0		; x = 0
+		SNE V0, 128		; x > 127
+		LD V0, 127		; x = 127
+		
+		; clamp value of V1 [Y POSITION]
+		SNE V1, 255		; y < 0
+		LD V1, 0		; < = 0
+		SNE V1, 64		; y > 63
+		LD V1, 63		; < = 63
+	RET
+	
+	OBJ_DRAW:
+		LD I, d_pixel
+		
+		; if (y >= 8 && y <= 22) then don't set pixel.
+		LD VB, 08
+		LD VF, 00
+		LOOP_25011614:
+			SNE V1, VB
+				LD VF, 01
+			ADD VB, 01
+			SE VB, 22
+				JP LOOP_25011614
+		; --------------------------------------------
+		
+		SE VF, 01 ; result, can set pixel:
+			CALL SET_PIXEL
+	RET
+	
+	; V0: X Pos
+	; V1: Y Pos
+	SET_PIXEL:
+		DRW V0, V1, 1
+		SE VF, #00			; Pixel had collision
+		DRW V0, V1, 1		; Redraw Pixel
+	RET
+	
+	DRAW_CHAR:
+		; Select character sprite: 0
+		LD V0, #00
+		LD HF, V0
+		LD V1, #0A ; Y POS
+		
+		; 0
+		LD V0, #0A
+		DRW V0, V1, 10
+		; 0
+		LD V0, #14
+		DRW V0, V1, 10
+		; S
+		LD I, d_char_s
+		LD V0, #1E
+		DRW V0, V1, 10
+		; C
+		LD V0, #C
+		LD HF, V0
+		LD V0, #28
+		DRW V0, V1, 10
+		; H
+		LD I, d_char_h
+		LD V0, #32
+		DRW V0, V1, 10
+		; I
+		LD I, d_char_i
+		LD V0, #39
+		DRW V0, V1, 10
+		; P
+		LD I, d_char_p
+		LD V0, #40
+		DRW V0, V1, 10
+		; 8
+		LD V0, #8
+		LD HF, V0
+		LD V0, #4A
+		DRW V0, V1, 10
+	RET
+
+ENDGAME:
+JP ENDGAME
+EXIT
+
+d_pixel:
+	DB $1.......
+d_char_s:
+	DB $.1111111
+	DB $1111111.
+	DB $11......
+	DB $111.....
+	DB $11111...
+	DB $...1111.
+	DB $.....111
+	DB $......11
+	DB $.1111111
+	DB $1111111.
+d_char_h:
+	DB $1......1
+	DB $11....11
+	DB $11....11
+	DB $11....11
+	DB $11111111
+	DB $11111111
+	DB $11....11
+	DB $11....11
+	DB $11....11
+	DB $1......1
+d_char_i:
+	DB $...11...
+	DB $...11...
+	DB $........
+	DB $........
+	DB $....1...
+	DB $...11...
+	DB $...11...
+	DB $...11...
+	DB $...11...
+	DB $...1....
+d_char_p:
+	DB $1111111.
+	DB $11...111
+	DB $11....11
+	DB $11...111
+	DB $1111111.
+	DB $11......
+	DB $11......
+	DB $11......
+	DB $11......
+	DB $1.......

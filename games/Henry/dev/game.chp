@@ -1,0 +1,236 @@
+; ------------------------------------ ;
+; -- 00Laboratories Chip8 game core -- ;
+; ------------------------------------ ;
+OPTION BINARY
+ALIGN OFF
+HIGH
+
+JP		INITIALIZE
+DA		'Copyright (c) 00laboratories 2011-2015'
+
+; -- Memory Layout ------------------- ;
+; @E00: OBJ address space.
+; #00: Current X Position.
+; #01: Current Y Position.
+; ...
+; #09: Unused.
+; -- Register Layout ----------------- ;
+;  VA: Subtraction Value.
+;  VB: General Purpose.
+;  VC: General Purpose.
+;  VF: Carry & Collision Flag.
+; ------------------------------------ ;
+
+; V1: Object Offset.
+OBJ_SELECT:
+	; Assemble: #ANNN	LD I, Address
+	LD V0, #AE				; Address Space #E00
+	
+	LD I, OBJ_GET_INJECT	; Select Injection Point.
+	LD [I], V1				; Inject 2 Bytes (V0 & V1).
+	
+	LD I, OBJ_SET_INJECT	; Select Injection Point.
+	LD [I], V1				; Inject 2 Bytes (V0 & V1).
+RET
+
+OBJ_GET:
+	; Code Injection:
+	OBJ_GET_INJECT:
+	DB #00
+	DB #00
+	; ^^ LD I, #E00 + NN ^^
+	LD V9, [I]	; Load object data into registers V0 - V9.
+RET
+
+OBJ_SET:
+	; Code Injection:
+	OBJ_SET_INJECT:
+	DB #00
+	DB #00
+	; ^^ LD I, #E00 + NN ^^
+	LD [I], V9	; Save registers V0 - V9 into object data.
+RET
+
+INITIALIZE:
+	; Draw "00SCHIP8" on the screen.
+	CALL DRAW_CHAR
+	
+	; Initialize Objects.
+	LD VB, 00					; iterator VB
+	LOOP_25011826:
+		LD V1, VB				; argument V1 for OBJ_SELECT.
+		CALL OBJ_SELECT			; select object at #EVB
+		CALL OBJ_GET			; load object data into registers.
+			CALL OBJ_INIT		; initialize object (default values).
+		CALL OBJ_SET			; save registers into object data.
+		ADD VB, 10	; next object
+		SNE VB, 80	; objects total reached?
+			JP MAIN ; break iteration
+			JP LOOP_25011826
+
+MAIN:
+	LD VC, 00					; iterator VC
+	LOOP_25011836:
+		LD V1, VC				; argument V1 for OBJ_SELECT.
+		CALL OBJ_SELECT			; select object at #EVC
+		CALL OBJ_GET			; load object data into registers.
+			CALL OBJ_UPDATE		; update object.
+			CALL OBJ_DRAW		; render object.
+		CALL OBJ_SET			; save registers into object data.
+		ADD VC, 10	; next object
+		SNE VC, 80	; objects total reached?
+			JP MAIN ; break iteration
+			JP LOOP_25011836
+JP MAIN
+	
+OBJ_INIT:
+	LD V0, 16	; initial X coordinate.
+	ADD V0, VB	; add iterator to put some distance between X.
+	LD V1, 32	; initial Y coordinate.
+RET
+
+OBJ_UPDATE:
+	LD VA, 1 ; SUBTRACT TO 1
+
+	; randomly increase or decrease V0 [X POSITION].
+	RND V8, $00000001	; Generate number between 0 and 1.
+	SNE V8, 0			; Does the number equal 0?
+		ADD V0, 01		; Add 1 to X coordinate.
+	SNE V8, 1			; Does the number equal 1?
+		SUB V0, VA		; Subtract 1 from Y coordinate.
+
+	; randomly increase or decrease V1 [Y POSITION].
+	RND V8, $00000001	; Generate number between 0 and 1.
+	SNE V8, 0			; Does the number equal 0?
+		ADD V1, 01		; Add 1 to Y coordinate.
+	SNE V8, 1			; Does the number equal 1?
+		SUB V1, VA		; Subtract 1 from Y coordinate.
+		
+	; clamp value of V0 [X POSITION]
+	SNE V0, 255		; x < 0
+	LD V0, 0		; x = 0
+	SNE V0, 128		; x > 127
+	LD V0, 127		; x = 127
+	
+	; clamp value of V1 [Y POSITION]
+	SNE V1, 255		; y < 0
+	LD V1, 0		; < = 0
+	SNE V1, 64		; y > 63
+	LD V1, 63		; < = 63
+RET
+	
+OBJ_DRAW:
+	LD I, d_pixel	; select pixel sprite.
+	
+	; if (y >= 8 && y <= 22) then don't set pixel.
+	LD VB, 08					; Iterator VB beginning at 8.
+	LD VF, 00					; Result: False.
+	LOOP_25011614:
+		SNE V1, VB				; Does the Y coordinate equal VB iterator?
+			LD VF, 01			; Result: True.
+		ADD VB, 01 ; next iteration
+		SE VB, 22 ; break at 22
+			JP LOOP_25011614
+	
+	SE VF, 01					; Result: true, can set pixel:
+		CALL SET_PIXEL
+RET
+
+; V0: X Pos
+; V1: Y Pos
+SET_PIXEL:
+	DRW V0, V1, 1	; Initial draw.
+	SE VF, #00		; Pixel had collision
+	DRW V0, V1, 1	; Redraw Pixel
+RET
+
+DRAW_CHAR:
+	LD V1, #0A 		; Y Position for all characters.
+	
+	LD V0, #00		; Set to 0 for next command.
+	LD HF, V0		; Load sprite "0" into I.
+	; 0
+	LD V0, #0A		; Move on X coordinate.
+	DRW V0, V1, 10	; Draw sprite.
+	; 0
+	LD V0, #14		; Move on X coordinate.
+	DRW V0, V1, 10	; Draw sprite.
+	; S
+	LD I, d_char_s	; Set I to address of "S".
+	LD V0, #1E		; Move on X coordinate.
+	DRW V0, V1, 10	; Draw sprite.
+	; C
+	LD V0, #C		; Set to C for next command.
+	LD HF, V0		; Load sprite "C" into I.
+	LD V0, #28		; Move on X coordinate.
+	DRW V0, V1, 10	; Draw sprite.
+	; H
+	LD I, d_char_h	; Set I to address of "H".
+	LD V0, #32		; Move on X coordinate.
+	DRW V0, V1, 10	; Draw sprite.
+	; I
+	LD I, d_char_i	; Set I to address of "I".
+	LD V0, #39		; Move on X coordinate.
+	DRW V0, V1, 10	; Draw sprite.
+	; P
+	LD I, d_char_p	; Set I to address of "P".
+	LD V0, #40		; Move on X coordinate.
+	DRW V0, V1, 10	; Draw sprite.
+	; 8
+	LD V0, #8		; Set to 8 for next command.
+	LD HF, V0		; Load sprite "8" into I.
+	LD V0, #4A		; Move on X coordinate.
+	DRW V0, V1, 10	; Draw sprite.
+RET
+
+; We never reach this code but prevent running data beyond this point.
+ENDGAME:
+JP ENDGAME
+EXIT
+
+d_pixel:
+	DB $1.......
+d_char_s:
+	DB $.1111111
+	DB $1111111.
+	DB $11......
+	DB $111.....
+	DB $11111...
+	DB $...1111.
+	DB $.....111
+	DB $......11
+	DB $.1111111
+	DB $1111111.
+d_char_h:
+	DB $1......1
+	DB $11....11
+	DB $11....11
+	DB $11....11
+	DB $11111111
+	DB $11111111
+	DB $11....11
+	DB $11....11
+	DB $11....11
+	DB $1......1
+d_char_i:
+	DB $...11...
+	DB $...11...
+	DB $........
+	DB $........
+	DB $....1...
+	DB $...11...
+	DB $...11...
+	DB $...11...
+	DB $...11...
+	DB $...1....
+d_char_p:
+	DB $1111111.
+	DB $11...111
+	DB $11....11
+	DB $11...111
+	DB $1111111.
+	DB $11......
+	DB $11......
+	DB $11......
+	DB $11......
+	DB $1.......
